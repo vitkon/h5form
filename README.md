@@ -15,7 +15,7 @@ In your web page:
 <script src="dist/jquery.h5form.min.js"></script>
 <script>
 jQuery(function($) {
-  $.awesome(); // "awesome"
+  $('#yourForm').initH5Form();
 });
 </script>
 ```
