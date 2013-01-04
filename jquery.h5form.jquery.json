@@ -1,0 +1,29 @@
+{
+  "name": "jquery.h5form",
+  "title": "jQuery H5form",
+  "description": "jQuery plugin for cross-browser HTML5 form validation and ajax submission",
+  "version": "0.3.0",
+  "homepage": "https://github.com/vitkon/h5form",
+  "author": {
+    "name": "Vitaly Kondratiev",
+    "email": "vitalkond@gmail.com",
+    "url": "http://www.site-media.co.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vitkon/h5form.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vitkon/h5form/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/vitkon/h5form/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "1.7"
+  },
+  "keywords": []
+}
