@@ -22,29 +22,47 @@
       raises(block, [expected], [message])
   */
 
-  module('h5Form');
-
-  test('h5Form object exists', function() {
-    equal(typeof $.h5Form, "object", "h5Form object exists");
-
+  module('H5Form', {
+    setup: function() {
+      //this.elems = $('#qunit-fixture').children();
+      this.elems = $('<form id="qUnit" method="post" name="qUnit" action=""></form>');
+    }
   });
 
   test('toConsole method', function() {
-
+    $.h5Form.debug = 'on';
     equal($.h5Form.toConsole('test'), true, "simple console.log should work");
     equal($.h5Form.toConsole('test', 'warn'), true, "console.warn should work");
     equal($.h5Form.toConsole('test', 'error'), true, "console.error should work");
     raises(
       function () { $.h5Form.toConsole(); },
       Error,
-      "console should throw an error if argument is not provided"
+      "toConsole should throw an error if argument is not provided"
+    );
+    raises(
+      function () { $.h5Form.toConsole(['test']); },
+      Error,
+      "toConsole should throw an error if argument is not string"
     );
 
   });
 
+  test('isValidNode method', function () {
+    strictEqual($.h5Form.isValidNode('input'), true, "input field must be validated");
+    strictEqual($.h5Form.isValidNode('textarea'), true, "textarea field must be validated");
+    strictEqual($.h5Form.isValidNode('select'), true, "select field must be validated");
+    strictEqual($.h5Form.isValidNode('button'), false, "button field shouldn't pass the validation");
+    strictEqual($.h5Form.isValidNode({input: 'input'}), false, "elements other than string shouldn't pass the validation");
+  });
+
+  test('init method', function() {
+    strictEqual(this.elems.initH5Form().hasClass('h5form'), true, "h5form class should be applied to the form");
+  });
+
   module('initH5Form', {
     setup: function() {
-      this.elems = $('#qunit-fixture').children();
+      //this.elems = $('#qunit-fixture').children();
+      this.elems = $('<form id="qUnit" method="post" name="qUnit" action=""></form>');
     }
   });
 
@@ -57,8 +75,6 @@
     equal(typeof $.h5Form.defaultOptions, "object", "default options should be set up correctly");
     equal(typeof $.h5Form.setOptions("123"), "object", "user can have an option not to provide options");
     equal($.h5Form.setOptions({debug: 'test'}).debug, "test", "user should be able to override default options");
-
-    console.log($.h5Form.setOptions("123"));
 
   });
 

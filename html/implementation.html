@@ -8,12 +8,44 @@
 </head>
 </head>
 <body>
-	<form action="" method="POST" name="testForm" id="testForm">
-		<input type="text" name="email" />
+	<form action="test.html" method="POST" name="testForm" id="testForm">
+		<label>Test 1</label>
+		<span></span>
+		<input type="text" name="email1" class="required" />
+
+		<label for="email2">Test 2</label>
+		<span>
+		<input type="text" name="email2" id="email2" required="required" />
+		</span>
+		<button type="submit">OK</button>
+	</form>
+	<hr/>
+	<form action="test2.html" method="POST" name="testForm2" id="testForm2">
+		<label>Test 3</label>
+		<span></span>
+		<input type="text" name="email3" class="required" />
+
+		<label for="email4">Test 4</label>
+		<span>
+		<input type="text" name="email4" id="email4" required="required" />
+		</span>
+		<button type="submit">OK</button>
+	</form>
+	<hr/>
+	<form action="test3.html" method="POST" name="testForm3" id="testForm3">
+		<label>Test 5</label>
+		<input type="text" name="email5" class="required" />
+
+		<label for="email6">Test 6</label>
+		<span>
+		<input type="text" name="email6" id="email6" required="required" />
+		</span>
 		<button type="submit">OK</button>
 	</form>
 	<script>
-		$('#testForm').initH5Form({debug:'on'});
+		$('#testForm').initH5Form({debug:'on', cssClass: 'deloitte'});
+		$('#testForm2').initH5Form({debug:'on', cssClass: 'JL'});
+		$('#testForm3').initH5Form({debug:'on', cssClass: 'tfl'});
 	</script>
 </body>
 </html>
