@@ -43,7 +43,7 @@
 		<button type="submit">OK</button>
 	</form>
 	<script>
-		$('#testForm').initH5Form({debug:'on', cssClass: 'deloitte'});
+		$('#testForm').initH5Form({debug:'on', cssClass: 'deloitte', beforeSubmit: function () { alert('done'); return true;} });
 		$('#testForm2').initH5Form({debug:'on', cssClass: 'JL'});
 		$('#testForm3').initH5Form({debug:'on', cssClass: 'tfl'});
 	</script>

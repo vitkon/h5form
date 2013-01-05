@@ -55,9 +55,12 @@
     strictEqual($.h5Form.isValidNode({input: 'input'}), false, "elements other than string shouldn't pass the validation");
   });
 
-  test('init method', function() {
-    strictEqual(this.elems.initH5Form().hasClass('h5form'), true, "h5form class should be applied to the form");
-  });
+
+  // test('init method', function() {
+
+  //   strictEqual(this.elems.initH5Form().hasClass('h5form'), true, "h5form class should be applied to the form");
+  //   //console.log(this);
+  // });
 
   module('initH5Form', {
     setup: function() {

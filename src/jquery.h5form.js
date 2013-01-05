@@ -19,14 +19,18 @@
         status: "idle"
     };
 
+
+    /**
+    *   Default form options
+    */
     $.h5Form.defaultOptions = {
             jsPath  : '../libs/vendors/',       // path to js libraries {relative or absolute path}
             cssPath : '/css/',              // path to css styling {relative or absolute path}
             imgPath : '/img/',              // path to images (e.g. ajax-loader) {relative or absolute path}
             langPath: '/js/language/',      // path to language js files {relative or absolute path}
             formPlugin: 'jquery.form.js',  //jquery.form plugin {filename.js} http://jquery.malsup.com/form/
-            language: 'en.js',              // en.js by default {filename.js}
-            cssStyle: 'pwnForms.css',       // Pwn form styling {filename.css}
+            //language: 'en.js',              // en.js by default {filename.js}
+            //cssStyle: 'pwnForms.css',       // Pwn form styling {filename.css}
             showMultipleErrors: false,      // show multiple errors (if any) at once or one by one {true|false}
             debug   : 'off',                // debugging option is the console {on|off}
             requiredAsterisk: 'off',        // asterisks next to required field's labels {on|off}
@@ -100,10 +104,10 @@
     };
 
     /**
-    *   Check if it is a valid and supported HTML form element
+    *   Check if it is a valid and supported DOM element
     *   currently `input`, `select` and `textarea` are supported
     *
-    *   @param {String} node HTML element (e.g. "input")
+    *   @param {String} node DOM element (e.g. "input")
     *   @returns {Boolean} True if element is supported
     */
     $.h5Form.isValidNode = function (node) {
@@ -116,6 +120,37 @@
         if (typeof node === 'string') {
             return (validNodes.hasOwnProperty(node)) ? true : false;
         } else { return false;}
+    };
+
+    /**
+    *   Valid DOM elements classifier
+    *
+    *   @returns {Array} Array of valid form elements
+    */
+    $.h5Form.validNodes = function () {
+        var validNodes = [
+            'input', 'select', 'textarea'
+        ];
+
+        return validNodes;
+    };
+
+    /**
+    *   Count own properties in the object
+    *
+    *   @param {Object} obj JS object
+    *   @returns {Number} Number of elements
+    */
+    $.h5Form.countProperties = function (obj) {
+        var count = 0;
+
+        $.each(obj, function (key, value) {
+            if (obj.hasOwnProperty(key)) {
+                count += 1;
+            }
+        });
+
+        return count;
     };
 
     /**
@@ -151,22 +186,27 @@
 
     };
 
-
-
-
+    /**
+    *   Load required js and css files
+    *
+    *   @param {Object} options Form options object
+    *   @returns {Object} Promise Object
+    */
     $.h5Form.loadRequired = function (options) {
         // jquery.form is required to process ajax forms
         var requiredJsCss = [options.jsPath + options.formPlugin],
-            lang = options && options.lang || '',
+            lang = options && options.language || '',
             cssStyle = options && options.cssStyle || '',
             deferred = $.Deferred();
 
         // Define languages, en - by default
-        //requiredJsCss.push(options.langPath + lang);
+        if (lang) {
+            requiredJsCss.push(options.langPath + lang);
+        }
 
         // Define styling if any
         if (cssStyle) {
-            //requiredJsCss.push(options.cssPath + cssStyle);
+            requiredJsCss.push(options.cssPath + cssStyle);
         }
 
         // load everything from requiredJsCss
@@ -179,15 +219,328 @@
             }
         });
 
+
         return deferred.promise();
+    };
+
+    /**
+    *   Enable/disable UI of the form,
+    *   mostly submit functionality
+    *
+    *   @this Current form context
+    *   @param {Boolean} status True to disable UI, False to enable it back
+    *   @param {Object} options Form options
+    *   @returns {Object} this Current form context
+    */
+    $.h5Form.toggleFormInProcess = function (status, options) {
+        var $form = $(this);
+
+        if (status === false) {
+
+            $form.find('.ajax-loader').remove();
+            $.h5Form.toConsole('ajax loader is hidden');
+
+            $form.find('[type=submit]').attr("disabled", false);
+            $.h5Form.toConsole('submit button is enabled');
+
+        }
+
+        if (status === true) {
+            $form.find('[type="submit"]:first-child')
+            .after('<span class="ajax-loader"></span>');
+            $.h5Form.toConsole('ajax loader is visible (after the submit button)');
+
+            //Disable Submit Button, to prevent clicking the button Multiple times
+            $form.find('[type=submit]').attr("disabled", true);
+            $.h5Form.toConsole('submit button is disabled');
+        }
+
+        return this;
+
+    };
+
+    /**
+    *   The chain of message evaluation
+    *
+    *   @param {String} text Text to evaluate
+    *   @returns {String} Evaluated text
+    */
+    $.h5Form.evaluateText = function (text) {
+        return ($.h5Form.language && $.h5Form.language[text]) || window[text] || undefined;
+    };
+
+    /**
+    *   Show error/success message for the form
+    *
+    *   @this Current form context
+    *   @param {String} message Message to show after error/success form submission
+    *   @param {String} status Form options
+    *   @param {Object} options Form options
+    *   @returns {Object} this Current form context
+    */
+    $.h5Form.showMessage = function (message, status, options) {
+        var position, // message position sh
+            $form = $(this),
+            _message; //temporary store evaluated message
+
+        //prepare and evaluate the message
+        if (typeof message === 'string') {
+            message = message.trim();
+
+            _message = $.h5Form.evaluateText(message);
+
+            if (_message === undefined) {
+                $.h5Form.toConsole('`message` didn\'t evaluate. Displayed as is: ' + message);
+            } else {
+                message = _message; // evaluated message
+            }
+        }
+
+        // position of the message is defined in form options [above|below|off]
+        position = options && options.messagePos || 'above';
+
+        // evaluate the message if it hasn't been done before
+        
+        if (position === 'below') {
+            $form.append('<div class="h5form-message ' + status + '">' + message + '</div>');
+        }
+
+        if (position === 'above') {
+            $form.prepend('<div class="h5form-message ' + status + '">' + message + '</div>');
+        }
+
+        if (status === 'success') { $form.find('.h5form-message').delay(6000).fadeOut('slow'); }
+
+    };
+
+    /**
+    *   get input field name even with square brackets
+    *   e.g. name="form[email]" will evaluate to `email`
+    *
+    *   @param {String} inputName Name attribute of input field
+    *   @returns {String} Name attribute without []
+    */
+    $.h5Form.getFormInputName = function (inputName) {
+        //Check if the inputName has [] Square Brackets in it
+        if (inputName !== undefined) {
+            if ((inputName.indexOf("[") >= 0) && (inputName.indexOf("]") >= 0)) {
+                return inputName.substring(inputName.indexOf("[") + 1, inputName.indexOf("]"));
+            }
+
+            if ((inputName.indexOf("[") < 0) && (inputName.indexOf("]") < 0)) {
+                return inputName;
+            }
+        } else { return undefined; }
+    };
+
+    /**
+    *   Show errors next to input fields
+    *
+    *   @this Current form context
+    *   @param {String} message Message to show after error/success form submission
+    *   @param {String} status Form options
+    *   @param {Boolean} [showMultiple=true] True to show multiple error messages next to input fields
+    *   @param {Boolean} [quotedConstants=true] True if the message has to be evaluated
+    *   @returns {Object} this Current form context
+    */
+    $.h5Form.showInputErrors = function (fieldsArr, quotedConstants, showMultiple) {
+        var fieldIndex, fieldHandle, prevHandle,
+        $form = $(this),
+        _message,
+        quotedMsg;
+
+        // show one error at a time or multiple messages
+        showMultiple = showMultiple || true;
+
+        // evaluate message by default
+        quotedConstants = quotedConstants || true;
+
+
+        // Hide all existing error boxes
+        $('.h5form-error').remove();
+
+        fieldIndex = fieldsArr.length;
+
+        if (fieldIndex > 0) {
+            for (fieldIndex in fieldsArr) {
+                if (fieldsArr.hasOwnProperty(fieldIndex)) {
+                    // If the constant is quoted then get the constant value
+                    if (quotedConstants) {
+                        // evaluate message
+                        _message = $.h5Form.evaluateText(fieldsArr[fieldIndex].message);
+
+                        if (_message === undefined) {
+                            $.h5Form.toConsole('`error` didn\'t evaluate. Displayed as is: ' + fieldsArr[fieldIndex].message);
+                        } else {
+                            fieldsArr[fieldIndex].message = _message; // evaluated message
+                        }
+
+                    }
+
+                    // If the field name is specified as alert, then show an alert box
+                    if (fieldsArr[fieldIndex].field_name === 'alert') {
+                        window.alert(fieldsArr[fieldIndex].message);
+                    } else {
+
+                        // store previous field
+                        prevHandle = fieldHandle;
+
+                        fieldHandle = $form.find('[name="'+ fieldsArr[fieldIndex].field_name + '"]');
+
+                        // to prevent multiple error containers in 1 field
+                        if ($(fieldHandle).attr('name') !== $(prevHandle).attr('name')) {
+                            fieldHandle.after('<div class="h5form-error" id="' + $.h5Form.getFormInputName(fieldsArr[fieldIndex].field_name) + '-error-box">' + fieldsArr[fieldIndex].message + '</div>');
+                        } else {
+                            $('#' + $.h5Form.getFormInputName(fieldsArr[fieldIndex].field_name) + '-error-box').append('<br/>' + fieldsArr[fieldIndex].message);
+                        }
+                    }
+
+                    // Quit looping and show only 1 message if we are not showing multiple messages
+                    if (showMultiple !== true) {
+                        return false;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // If there is nothing to validate then validation has passed
+        if (fieldsArr.length === 0) {
+            return true;
+        }
+
+    }; // end of ShowInputErrors
+
+    $.h5Form.validationRule = function (fieldOptions, errors) {
+
+    };
+
+    //Before form submit
+    $.h5Form.beforeSubmit = function (options) {
+        var countToValidate, elemsToValidate, errors, fieldOptions, j, message, node, validNodes,
+        deferred = $.Deferred(),
+        that = this;
+
+        validNodes = { 'input': 'input', 'select': 'select', 'textarea': 'textarea' }; //DOM elements to validate
+        errors =  []; // errors array
+
+        $.h5Form.toConsole('generic beforeSubmit function started');
+
+        //Remove all previous messages
+        $(this).find('.h5form-message').remove();
+        $(this).find('.h5form-error').remove();
+
+        $.h5Form.toggleFormInProcess.call(this, true, options);
+
+        //Go through all the Input Fields within the Form
+        $(this).find($.h5Form.validNodes().join(', ')).addClass('h5form-validate');
+        elemsToValidate = $(this).find('.h5form-validate');
+
+        $(this).find('.h5form-validate').each(function () {
+
+            node =  $(this).get(0).nodeName.toLowerCase();
+
+            fieldOptions = [];
+
+            if ($.h5Form.isValidNode(node)) {
+                /**
+                 * EMPTY REQUIRED FIELD
+                 * HTML Markup: <input type="text" name="first_name" class="required" /> or HTML5 markup <input type="text" name="first_name" required="required" />
+                 * Error format: variable defaults to FORM_VALIDATION_(FIELD_NAME)_EMPTY; if it's not set it uses var FORM_VALIDATION_FIELD_EMPTY
+                 */
+                //Normal markup
+                fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'required', error: 'EMPTY' });
+
+                //HTML5 markup
+                fieldOptions.push({ field: this, type: node, attribute: 'required', value: 'required', error: 'EMPTY' });
+
+                /**Email Check**/
+                //Normal
+                fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
+                //HTML5
+                fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
+
+                /**
+                * PATTERN
+                * HTML5 markup <input type="text" name="first_name" required="required" pattern="[^0-9][A-Za-z]{2,20}" />
+                * Error format:
+                * Suggested password pattern: ^.{6,}$  - more than 6 characters
+                * Alpha/numeric with spaces and special chars
+                * Different patterns here: http://html5pattern.com
+                */
+                //HTML5 only
+                fieldOptions.push({ field: this, type: node, attribute: 'pattern', value: '*', error: 'INVALID_PATTERN' });
+
+                /**
+                * NUMBER
+                * HTML5 markup <input type="number" name="participants" max="10" min="1" required="required" value="1" />
+                * only numeric values accepted, optional min and max parameters for the values
+                * Error format:
+                * not a valid number - defaults to FORM_VALIDATION_(FIELD_NAME)_INVALID_NUMBER; if it's not set it uses var FORM_VALIDATION_INVALID_NUMBER
+                * if number is greater than max - defaults to FORM_VALIDATION_(FIELD_NAME)_OVER_MAX; if it's not set it uses var FORM_VALIDATION_OVER_MAX
+                * if number is less than min - defaults to FORM_VALIDATION_(FIELD_NAME)_UNDER_MIN; if it's not set it uses var FORM_VALIDATION_UNDER_MIN
+                *
+                * all error messages are parsed:
+                * {minValue} and {maxValue} in the error messages are substituted with actual values
+                * for example:
+                *
+                * FORM_VALIDATION_OVER_MAX = "Field value must be between {minValue} and {maxValue}";
+                *
+                * will be evaluated as:
+                * Field value must be between 1 and 10
+                */
+                fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'number', error: 'INVALID_NUMBER' });
+
+            }
+
+            //check for against validation rules
+            for (var i = 0; i < fieldOptions.length; i += 1) {
+                $.h5Form.validationRule(fieldOptions[i], errors);
+            }
+
+        }); // end each element loop
+
+        errors.push('test error');
+
+        //Check if there are any Errors
+        if (errors.length > 0) {
+
+            $.h5Form.toConsole('Validation errors (' + (errors.length) + ') found on client side', 'warn');
+            //$.h5Form.toConsole(errors);
+
+            message = "FORM_VALIDATION_ERRORS_FOUND";
+
+            $.h5Form.toggleFormInProcess.call(this, false, options);
+
+            $.h5Form.showMessage.call(this, message, 'error', options);
+            $.h5Form.showInputErrors(errors, true, options.showMultipleErrors);
+            deferred.reject(); // send fail
+        }
+
+        if (errors.length === 0) {
+            deferred.resolve(); // send success
+        }
+
+        return deferred.promise();
+
+    }; //End Before Submit
+
+    $.h5Form.onError = function (responseText) {
+        console.log('error');
+    };
+
+    $.h5Form.onSucess = function (responseText) {
+        console.log('success');
     };
 
 
     $.h5Form.init = function (options) {
         var $form = $(this), // current Form
-            cssClass = options && options.cssClass || '';
+            cssClass = options && options.cssClass || '',
+            that = this,
+            eventsOptions = {}; // events options for jquery.form plugin init
             
-
         $.h5Form.toConsole('form init started (' + $.h5Form.version + ') - ' + $form.attr('id'));
 
         //Switches on/off HTML5 Validation
@@ -211,10 +564,56 @@
         }
 
         // @todo: custom events (skipped for now)
+        var onSuccessCustom = function () {};
+        var onErrorCustom = function () {};
+        var beforeSubmitCustom = function () {return true;};
+
+        if (options && options.beforeSubmit) {
+            beforeSubmitCustom = options.beforeSubmit;
+        }
+
+        if (options && options.success) {
+            onSuccessCustom  = options.success;
+        }
+
+        if (options && options.error) {
+            onErrorCustom  = options.error;
+        }
+
+        eventsOptions = {
+            beforeSubmit: function () {
+                var result;
+
+                $.h5Form.beforeSubmit.call(that, options)
+                .done(function() {
+                    console.log('success in generic beforeSubmit');
+                    result = beforeSubmitCustom();
+                })
+                .fail(function() {
+                    console.log('fail in generic beforeSubmit');
+                    result = false;
+                });
+
+                
+                $.h5Form.toggleFormInProcess.call(that, false, options); //unblock UI
+
+                return (result === false) ? false : true;
+            },
+            success: function (responseText) {
+                $.h5Form.onSuccess.call(that, responseText);
+                onSuccessCustom(responseText); // user-defined success scenario
+            },
+            error: function (responseText) {
+                $.h5Form.onError.call(that, responseText);
+                onErrorCustom(responseText);
+            }
+        };
+
+
 
 
         if ($.fn.ajaxForm) {
-            $form.ajaxForm(options);
+            $form.ajaxForm(eventsOptions);
             $.h5Form.toConsole('form ' + $form.attr('id') + ' successfully initialised');
             $.h5Form.status = "idle";
             return true;
@@ -253,7 +652,6 @@
             $.h5Form.toConsole('another try with ' + $(this).attr('id'));
             var t = setTimeout( function () {
                 $.fn.initH5Form.call(that, options);
-                $.h5Form.toConsole($.h5Form.status);
             }, 200);
         }
 
