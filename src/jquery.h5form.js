@@ -413,35 +413,85 @@
     }; // end of ShowInputErrors
 
     $.h5Form.validationRule = function (fieldOptions, errors) {
+        
+        var attributeKey, check, email, emailReg, errorMsg, errorMsgVars,
+            $field = $(fieldOptions.field), // cache jQuery element
+            fieldMin, fieldMax, maxValue, minValue, pattern, patternLength, val;
+
+        attributeKey = $field.attr(fieldOptions.attribute);
+
+        // if field is visible - proceed with validation
+        if ($field.is(':visible')) {
+
+            // edge case for patterns
+            if ((fieldOptions.attribute === 'pattern')) { attributeKey = fieldOptions.value; }
+
+            if ((attributeKey === fieldOptions.value) || ($field.hasClass(fieldOptions.value))) {
+
+                if (fieldOptions.error === 'EMPTY') {
+
+                    // checkbox case
+                    if ($field.is('input') === true) {
+                        if ($field.attr('type') === 'checkbox') {
+                            if ($field.is(':checked') === false) {
+                                check = false;
+                            }
+                        }
+                    }
+
+                    if (($field.val().trim() === '') || (check === false)) {
+                        errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                        if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_FIELD_' + fieldOptions.error; }
+                        errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                    }
+
+                }
+                
+                if (fieldOptions.error === 'INVALID_EMAIL_ADDRESS') {
+                    email = $field.val();
+                    if (email !== '') {
+                        /*http://stackoverflow.com/questions/46155/validate-email-address-in-javascript*/
+                        emailReg = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                        if (!emailReg.test(email)) {
+                            errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                            if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
+                            errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                        }
+                    }
+                }
+                
+            }
+            
+        } // if it is a visible field
+        
+        return errors;
+
 
     };
 
     //Before form submit
     $.h5Form.beforeSubmit = function (options) {
-        var countToValidate, elemsToValidate, errors, fieldOptions, j, message, node, validNodes,
+        var countToValidate, elemsToValidate, errors = [], fieldOptions = [], j, message, node, validNodes,
         deferred = $.Deferred(),
+        $this = $(this), // cache jQuery element
         that = this;
-
-        validNodes = { 'input': 'input', 'select': 'select', 'textarea': 'textarea' }; //DOM elements to validate
-        errors =  []; // errors array
 
         $.h5Form.toConsole('generic beforeSubmit function started');
 
         //Remove all previous messages
-        $(this).find('.h5form-message').remove();
-        $(this).find('.h5form-error').remove();
+        $this.find('.h5form-message').remove();
+        $this.find('.h5form-error').remove();
 
         $.h5Form.toggleFormInProcess.call(this, true, options);
 
         //Go through all the Input Fields within the Form
-        $(this).find($.h5Form.validNodes().join(', ')).addClass('h5form-validate');
-        elemsToValidate = $(this).find('.h5form-validate');
+        $this.find($.h5Form.validNodes().join(', ')).addClass('h5form-validate');
+        elemsToValidate = $this.find('.h5form-validate');
+        
+        $this.find('.h5form-validate').each(function () {
+            var $this = $(this); // cache jQuery element
 
-        $(this).find('.h5form-validate').each(function () {
-
-            node =  $(this).get(0).nodeName.toLowerCase();
-
-            fieldOptions = [];
+            node =  $this.get(0).nodeName.toLowerCase();
 
             if ($.h5Form.isValidNode(node)) {
                 /**
@@ -450,17 +500,25 @@
                  * Error format: variable defaults to FORM_VALIDATION_(FIELD_NAME)_EMPTY; if it's not set it uses var FORM_VALIDATION_FIELD_EMPTY
                  */
                 //Normal markup
-                fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'required', error: 'EMPTY' });
-
+                if ($this.hasClass('required')) {
+                    fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'required', error: 'EMPTY' });
+                }
+                
                 //HTML5 markup
-                fieldOptions.push({ field: this, type: node, attribute: 'required', value: 'required', error: 'EMPTY' });
+                if ($this.attr('required')) {
+                    fieldOptions.push({ field: this, type: node, attribute: 'required', value: 'required', error: 'EMPTY' });
+                }
 
                 /**Email Check**/
                 //Normal
-                fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
+                if ($this.hasClass('email')) {
+                    fieldOptions.push({ field: this, type: node, attribute: 'class', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
+                }
+                
                 //HTML5
-                fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
-
+                if ($this.attr('type') === 'email') {
+                    fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'email', error: 'INVALID_EMAIL_ADDRESS' });
+                }
                 /**
                 * PATTERN
                 * HTML5 markup <input type="text" name="first_name" required="required" pattern="[^0-9][A-Za-z]{2,20}" />
@@ -470,8 +528,10 @@
                 * Different patterns here: http://html5pattern.com
                 */
                 //HTML5 only
-                fieldOptions.push({ field: this, type: node, attribute: 'pattern', value: '*', error: 'INVALID_PATTERN' });
-
+                if ($this.hasClass('pattern')) {
+                    fieldOptions.push({ field: this, type: node, attribute: 'pattern', value: '*', error: 'INVALID_PATTERN' });
+                }
+                
                 /**
                 * NUMBER
                 * HTML5 markup <input type="number" name="participants" max="10" min="1" required="required" value="1" />
@@ -490,18 +550,23 @@
                 * will be evaluated as:
                 * Field value must be between 1 and 10
                 */
-                fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'number', error: 'INVALID_NUMBER' });
-
+                
+                if ($this.attr('type') === 'number') {
+                    fieldOptions.push({ field: this, type: node, attribute: 'type', value: 'number', error: 'INVALID_NUMBER' });
+                }
+                
             }
 
-            //check for against validation rules
-            for (var i = 0; i < fieldOptions.length; i += 1) {
-                $.h5Form.validationRule(fieldOptions[i], errors);
-            }
 
         }); // end each element loop
 
-        errors.push('test error');
+        //check for against validation rules
+        for (var i = 0; i < fieldOptions.length; i += 1) {
+            $.h5Form.validationRule(fieldOptions[i], errors);
+        }
+                
+
+        //errors.push('test error'); // @todo: remove this debug line
 
         //Check if there are any Errors
         if (errors.length > 0) {
