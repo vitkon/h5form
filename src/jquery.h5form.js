@@ -411,10 +411,51 @@
         }
 
     }; // end of ShowInputErrors
+    
+    // get field length constrains from the regexp
+    $.h5Form.getLengthConstrains = function (str) {
+
+        var arr,
+            results = [],
+            re = /{([^}]+)}/g, text;
+
+        if ((str !== undefined) && (str.charAt(str.length - 2) === '}')) {
+            while (text = re.exec(str)) {
+                results.push(text[1]);
+            }
+
+            if (results[0] !== undefined) {
+                arr = results[0].split(',');
+            }
+        }
+
+        return arr;
+    };
+    
+    // Evaluate error message with variables
+    $.h5Form.evalErrorMessage = function (errorMsg, obj) {
+        var errorMsgEval = $.h5Form.evaluateText(errorMsg) || errorMsg;
+
+        $.each(obj, function (key, value) {
+            if (obj.hasOwnProperty(key)) {
+                if (errorMsgEval !== undefined) {
+                    errorMsgEval = errorMsgEval.replace('{' + key + '}', obj[key]);
+                }
+
+                // warn if variable doesn't exist
+                if ((errorMsgEval === undefined) && (errorMsg !== undefined)) {
+                    $.h5Form.toConsole(errorMsg + ' variable is not defined', 'error');
+                }
+            }
+        });
+
+        return errorMsgEval;
+    };
 
     $.h5Form.validationRule = function (fieldOptions, errors) {
         
         var attributeKey, check, email, emailReg, errorMsg, errorMsgVars,
+            field, //field value
             $field = $(fieldOptions.field), // cache jQuery element
             fieldMin, fieldMax, maxValue, minValue, pattern, patternLength, val;
 
@@ -460,9 +501,69 @@
                     }
                 }
                 
+                if (fieldOptions.error === 'INVALID_PATTERN') {
+
+                    patternLength = $.h5Form.getLengthConstrains($field.attr('pattern'));
+
+                    // define Max and Min length from regexp
+                    if (patternLength !== undefined) {
+                        if (patternLength[0] !== '') { fieldMin = patternLength[0]; }
+
+                        if (patternLength[1] !== '') { fieldMax = patternLength[1]; }
+                    }
+
+                    field = $(fieldOptions.field).val();
+                    pattern = new RegExp($(fieldOptions.field).attr('pattern'));
+
+                    if (field.length > 0) {
+                        if (!pattern.test(field)) {
+
+                            if (patternLength !== undefined) {
+
+                                if ((fieldMin !== undefined) && (fieldMax === undefined) && (field.length < fieldMin)) {
+                                    errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                                    if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_UNDER_MIN'; }
+                                    errorMsgVars = { minLength: fieldMin };
+                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $field.attr('name')});
+                                }
+
+                                else if ((fieldMin === undefined) && (fieldMax !== undefined) && (field.length > fieldMax)) {
+                                    errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                                    if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_OVER_MAX'; }
+                                    errorMsgVars = { maxLength: fieldMax };
+                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $(fieldOptions.field).attr('name')});
+                                }
+
+                                else if ((fieldMin !== undefined) && (fieldMax !== undefined) && (field.length < fieldMin) && (field.length > fieldMax)) {
+                                    errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                                    if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_BETWEEN'; }
+                                    errorMsgVars = { minLength: fieldMin, maxLength: fieldMax };
+                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $field.attr('name')});
+                                }
+
+                                else {
+                                    errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($(fieldOptions.field).attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                                    if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
+                                    errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                                }
+                            }
+
+                            if (patternLength === undefined) {
+                                errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                                if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
+                                errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                            }
+
+                        }
+                    }
+
+                }
+                
             }
             
         } // if it is a visible field
+        
+        console.log(errors);
         
         return errors;
 
@@ -528,7 +629,7 @@
                 * Different patterns here: http://html5pattern.com
                 */
                 //HTML5 only
-                if ($this.hasClass('pattern')) {
+                if ($this.attr('pattern')) {
                     fieldOptions.push({ field: this, type: node, attribute: 'pattern', value: '*', error: 'INVALID_PATTERN' });
                 }
                 
