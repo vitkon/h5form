@@ -483,7 +483,7 @@
                     if (($field.val().trim() === '') || (check === false)) {
                         errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                         if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_FIELD_' + fieldOptions.error; }
-                        errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                        errors.push({ message: errorMsg, field_name  : $field.attr('name')});
                     }
 
                 }
@@ -496,7 +496,7 @@
                         if (!emailReg.test(email)) {
                             errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                             if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
-                            errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                            errors.push({message: errorMsg, field_name  : $field.attr('name')});
                         }
                     }
                 }
@@ -524,46 +524,80 @@
                                     errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                                     if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_UNDER_MIN'; }
                                     errorMsgVars = { minLength: fieldMin };
-                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $field.attr('name')});
+                                    errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
                                 }
 
                                 else if ((fieldMin === undefined) && (fieldMax !== undefined) && (field.length > fieldMax)) {
                                     errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                                     if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_OVER_MAX'; }
                                     errorMsgVars = { maxLength: fieldMax };
-                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $(fieldOptions.field).attr('name')});
+                                    errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $(fieldOptions.field).attr('name')});
                                 }
 
                                 else if ((fieldMin !== undefined) && (fieldMax !== undefined) && (field.length < fieldMin) && (field.length > fieldMax)) {
                                     errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                                     if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_LENGTH_BETWEEN'; }
                                     errorMsgVars = { minLength: fieldMin, maxLength: fieldMax };
-                                    errors.push({'message': $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), 'field_name': $field.attr('name')});
+                                    errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
                                 }
 
                                 else {
                                     errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($(fieldOptions.field).attr('name')).toUpperCase() + '_' + fieldOptions.error;
                                     if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
-                                    errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                                    errors.push({ message: errorMsg, field_name  : $field.attr('name')});
                                 }
                             }
 
                             if (patternLength === undefined) {
                                 errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
                                 if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
-                                errors.push({'message': errorMsg, 'field_name'  : $field.attr('name')});
+                                errors.push({ message: errorMsg, field_name : $field.attr('name')});
                             }
 
                         }
                     }
 
-                }
+                } // end of INVALID_PATTERN
+                
+                if (fieldOptions.error === 'INVALID_NUMBER') {
+                    val = $(fieldOptions.field).val();
+
+                    // not a number
+                    if (val && isNaN(val)) {
+
+                        errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_' + fieldOptions.error;
+                        if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_' + fieldOptions.error; }
+                        errors.push({ message: errorMsg, field_name : $field.attr('name')});
+
+                    }
+
+                    if ( val && !isNaN(val)) {
+                        maxValue = $field.attr('max');
+                        minValue = $field.attr('min');
+                        
+                        console.log('max ' + maxValue + ', min ' + minValue + ', val ' + val)
+
+                        if (minValue && val < minValue) {
+                            errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_UNDER_MIN';
+                            if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_UNDER_MIN'; }
+
+                            errorMsgVars = { minValue: minValue, maxValue: maxValue};
+                            errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
+                        }
+
+                        if (maxValue && val > maxValue) {
+                            errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_OVER_MAX';
+                            if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined')  { errorMsg = 'FORM_VALIDATION_OVER_MAX'; }
+
+                            errorMsgVars = { minValue: minValue, maxValue: maxValue};
+                            errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
+                        }
+                    }   
+                } // end of INVALID_NUMBER
                 
             }
             
         } // if it is a visible field
-        
-        console.log(errors);
         
         return errors;
 
