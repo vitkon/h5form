@@ -561,6 +561,7 @@
                 
                 if (fieldOptions.error === 'INVALID_NUMBER') {
                     val = $(fieldOptions.field).val();
+                    val = !isNaN(val) && parseInt(val); // cast to `number` type if value is a number
 
                     // not a number
                     if (val && isNaN(val)) {
@@ -572,12 +573,13 @@
                     }
 
                     if ( val && !isNaN(val)) {
-                        maxValue = $field.attr('max');
-                        minValue = $field.attr('min');
+                        maxValue = parseInt($field.attr('max'));
+                        minValue = parseInt($field.attr('min'));
                         
                         console.log('max ' + maxValue + ', min ' + minValue + ', val ' + val)
 
                         if (minValue && val < minValue) {
+                            console.log(typeof minValue + ' ' + typeof val);
                             errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_UNDER_MIN';
                             if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined') { errorMsg = 'FORM_VALIDATION_UNDER_MIN'; }
 
@@ -585,7 +587,7 @@
                             errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
                         }
 
-                        if (maxValue && val > maxValue) {
+                        else if (maxValue && val > maxValue) {
                             errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_OVER_MAX';
                             if (typeof $.h5Form.evaluateText(errorMsg) === 'undefined')  { errorMsg = 'FORM_VALIDATION_OVER_MAX'; }
 
