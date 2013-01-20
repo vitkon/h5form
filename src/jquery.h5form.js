@@ -561,7 +561,7 @@
                 
                 if (fieldOptions.error === 'INVALID_NUMBER') {
                     val = $(fieldOptions.field).val();
-                    val = !isNaN(val) && parseInt(val); // cast to `number` type if value is a number
+                    val = !isNaN(val) && parseInt(val, 10); // cast to `number` type if value is a number
 
                     // not a number
                     if (val && isNaN(val)) {
@@ -573,8 +573,8 @@
                     }
 
                     if ( val && !isNaN(val)) {
-                        maxValue = parseInt($field.attr('max'));
-                        minValue = parseInt($field.attr('min'));
+                        maxValue = parseInt($field.attr('max'), 10);
+                        minValue = parseInt($field.attr('min'), 10);
 
                         if (minValue && val < minValue) {
                             errorMsg = 'FORM_VALIDATION_' + $.h5Form.getFormInputName($field.attr('name')).toUpperCase() + '_UNDER_MIN';
@@ -591,7 +591,7 @@
                             errorMsgVars = { minValue: minValue, maxValue: maxValue};
                             errors.push({ message: $.h5Form.evalErrorMessage(errorMsg, errorMsgVars), field_name: $field.attr('name')});
                         }
-                    }   
+                    }
                 } // end of INVALID_NUMBER
                 
             }
