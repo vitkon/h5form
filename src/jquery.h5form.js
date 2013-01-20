@@ -68,7 +68,7 @@
 
         if ($.h5Form.debug && $.h5Form.debug === 'on') {
 
-            if (message === undefined || typeof message !== 'string') {
+            if (message === undefined || typeof message !== 'string' && type !== 'debug') {
                 throw new Error($.h5Form.name + " – Message is not provided for $.h5Form.toConsole");
             }
 
@@ -79,7 +79,11 @@
             $.h5Form.history.push(arguments);
 
             if (window.console) {
-                window.console[type]('H5Form: ' + message);
+                if (typeof message !== 'object') {
+                    window.console[type]('H5Form: ' + message);
+                } else {
+                    window.console[type](message);
+                }
                 return true;
             } else { return false; }
         } else {
@@ -729,8 +733,30 @@
         console.log('error');
     };
 
-    $.h5Form.onSucess = function (responseText) {
-        console.log('success');
+    $.h5Form.onSuccess = function (responseText) {
+        var message, responseArr;
+
+        $.h5Form.toConsole('generic onSuccess function started');
+        $.h5Form.toggleFormInProcess(false);
+
+        /**
+         * If the http header specifies application/json as the content type, then
+         * the content is automatically parsed to JSON for us, otherwise do it manually
+        */
+
+        try {
+            responseArr = $.parseJSON(responseText);
+        } catch (e) {
+            responseArr = responseText;
+        }
+
+        $.h5Form.toConsole(responseArr, 'debug');
+
+        // if message doesn't evaluate - display as is
+        message = $.h5Form.evaluateText('FORM_VALIDATION_SUCCESS_MESSAGE') || 'FORM_VALIDATION_SUCCESS_MESSAGE';
+
+        $.h5Form.showMessage.call( this, message , 'success');
+        $.h5Form.toConsole('Success Message shown');
     };
 
 
