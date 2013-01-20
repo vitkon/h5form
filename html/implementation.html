@@ -11,11 +11,11 @@
 	<form action="test.html" method="POST" name="testForm" id="testForm">
 		<label>Test 1</label>
 		<span></span>
-		<input type="text" name="email1" class="required" />
+		<input type="email" name="email1" class="required" />
 
 		<label for="email2">Test 2</label>
 		<span>
-		<input type="text" name="email2" id="email2" required="required" />
+		<input type="number" name="email2" id="email2" required="required" min="5" max="10" />
 		</span>
 		<button type="submit">OK</button>
 	</form>
