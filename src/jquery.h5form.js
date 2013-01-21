@@ -730,7 +730,91 @@
     }; //End Before Submit
 
     $.h5Form.onError = function (responseText) {
-        console.log('error');
+        var responseArr, message;
+
+        $.h5Form.toConsole('generic onError function started');
+
+        $.h5Form.toggleFormInProcess(false);
+
+        //preparing responseText and correcting if needed
+        if (responseText.error_messages === undefined) {
+            if (responseText.responseText) {
+                responseText = responseText.responseText;
+            }
+        }
+
+        try {
+            if (typeof responseText === 'string') {
+                responseArr = $.parseJSON(responseText);
+                console.log(102);
+            } else {
+                responseArr = responseText;
+                console.log(103);
+            }
+        } catch (e) {
+            responseArr = null;
+            console.log(104);
+        }
+
+        $.h5Form.toConsole(responseArr, 'debug');
+
+
+        /**
+        *   Response Json with errors must include `error_messages` key
+        *   which has the following structure:
+        *       errors_messages:
+        *           [
+        *               {"field_name":"last_name", "message":"Empty Last Name"},
+        *               {"field_name":"country", "message":"COUNTRY_INVALID"}
+        *           ]
+        */
+
+        // convert object to array
+        if (($.isArray(responseArr.error_messages) === false) && (responseArr.error_messages instanceof Object)) {
+            responseArr.error_messages = $.makeArray(responseArr.error_messages);
+        }
+
+
+
+        //Check if there are any server side error messages
+        if ((responseArr && responseArr.error_messages instanceof Array) && (responseArr.error_messages.length > 0)) {
+
+            $.h5Form.toConsole('Error messages from the server:');
+            $.h5Form.toConsole(responseArr.error_messages, 'debug');
+            $.h5Form.showInputErrors.call(this, responseArr.error_messages, '', true);
+            
+            $.h5Form.toConsole('Error found on server side', 'warn');
+
+            message = responseArr.general_message || $.h5Form.evaluateText('FORM_VALIDATION_ERRORS_FOUND') || 'FORM_VALIDATION_ERRORS_FOUND';
+
+            $.h5Form.showMessage.call(this, message, 'error');
+            $.h5Form.toConsole('General error message shown');
+            return false;
+
+        }
+
+        /**
+        *   `unknown server side error (1)` most likely means that errors in JSON response
+        *   were not provided in the right format as per example above
+        */
+
+        if (responseArr && ((responseArr.error_messages === undefined) || (responseArr.error_messages.length === 0))) {
+            message = $.h5Form.evaluateText('FORM_UNKNOWN_ERROR') || 'FORM_UNKNOWN_ERROR';
+            $.h5Form.showMessage.call(this, message, 'error');
+            $.h5Form.toConsole('unknown server side error (1)', 'error');
+            return false;
+        }
+
+        /**
+        *   `unknown server side error (2)` means that plugin was unable to parse JSON
+        *   from server
+        */
+        if (responseArr === undefined) {
+            message = $.h5Form.evaluateText('FORM_UNKNOWN_ERROR') || 'FORM_UNKNOWN_ERROR';
+            $.h5Form.showMessage.call(this, message, 'error');
+            $.h5Form.toConsole('unknown server side error (2)', 'error');
+            return false;
+        }
     };
 
     $.h5Form.onSuccess = function (responseText) {
@@ -745,15 +829,19 @@
         */
 
         try {
-            responseArr = $.parseJSON(responseText);
+            if (typeof responseText === 'string') {
+                responseArr = $.parseJSON(responseText);
+            } else {
+                responseArr = responseText;
+            }
         } catch (e) {
-            responseArr = responseText;
+            responseArr = undefined;
         }
 
         $.h5Form.toConsole(responseArr, 'debug');
 
         // if message doesn't evaluate - display as is
-        message = $.h5Form.evaluateText('FORM_VALIDATION_SUCCESS_MESSAGE') || 'FORM_VALIDATION_SUCCESS_MESSAGE';
+        message = responseArr && responseArr.general_message || $.h5Form.evaluateText('FORM_VALIDATION_SUCCESS_MESSAGE') || 'FORM_VALIDATION_SUCCESS_MESSAGE';
 
         $.h5Form.showMessage.call( this, message , 'success');
         $.h5Form.toConsole('Success Message shown');
