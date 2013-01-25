@@ -27,9 +27,9 @@
             jsPath  : '../libs/vendors/',       // path to js libraries {relative or absolute path}
             cssPath : '/css/',              // path to css styling {relative or absolute path}
             imgPath : '/img/',              // path to images (e.g. ajax-loader) {relative or absolute path}
-            langPath: '/js/language/',      // path to language js files {relative or absolute path}
+            langPath: '../libs/language/',      // path to language js files {relative or absolute path}
             formPlugin: 'jquery.form.js',  //jquery.form plugin {filename.js} http://jquery.malsup.com/form/
-            //language: 'en.js',              // en.js by default {filename.js}
+            language: 'en-msg-h5form.js',              // en-msg-h5form.js by default {filename.js}
             //cssStyle: 'pwnForms.css',       // Pwn form styling {filename.css}
             showMultipleErrors: false,      // show multiple errors (if any) at once or one by one {true|false}
             debug   : 'off',                // debugging option is the console {on|off}
